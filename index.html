@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+
+<head>
+
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script src="d3_radar.js"></script>
+
+
+  <script>
+    var data_promise = d3.csv("data.csv",function(d){
+      var result = {
+        key:d.key,
+        value:+d.value
+      };
+      return result
+    });
+
+    async function initial() {
+      // A successful promise will evalue to the value. d3v5 behaviour
+      var dataset = await data_promise;
+
+      var chart = new Radar_Chart({
+        cfData:dataset,
+        width:250,
+        height:250,
+        padding:50,
+        circleRadius:3,
+        maxWidth:'100%',
+        speed:1000,
+        element:document.querySelector("#chart-container")
+
+      });
+
+      console.log(chart);
+
+    };
+
+    initial();
+  </script>
+
+</head>
+
+<body>
+  <div float="left" class="chart-container" id="chart-container"></div>
+  <div class="button-container"></div>
+</body>
+
+
+
+
+
+</html>
