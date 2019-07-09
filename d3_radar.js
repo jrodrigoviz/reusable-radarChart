@@ -18,6 +18,8 @@ var Radar_Chart = function(opt) {
     this.maxWidth = opt.maxWidth;
     this.viewBoxOverwrite = opt.viewBoxOverwrite;
     this.startingRadian = Math.PI/2;
+    this.shapeFill = opt.shapeFill;
+    this.shapeOpacity = opt.shapeOpacity;
   
     this.draw();
   
@@ -37,7 +39,6 @@ Radar_Chart.prototype.generatePolarScale = function(){
     this.yScale = d3.scaleLinear()
         .domain([0,this.dataMaxValue]) 
         .range([0,this.r]);
-    
 
     //map the dimensions to [0,dimensionCount] to create spacing 2*PI/dimensionCount in the chart
     this.xScale = d3.scaleOrdinal()
@@ -48,7 +49,6 @@ Radar_Chart.prototype.generatePolarScale = function(){
     this.polarYScale = d3.scaleLinear()
       .domain([-this.r,this.r])
       .range([this.height - 2 * this.padding, 0]);
-
 
     this.polarXScale = d3.scaleLinear()
     .domain([-this.r,this.r])
@@ -71,11 +71,13 @@ Radar_Chart.prototype.draw = function() {
     this.plot = svg.append('g')
       .attr('class', 'Rader_Chart_holder')
       .attr('transform', "translate(" + this.padding + "," + this.padding + ")");
+
   
     this.generatePolarScale();
     //this.addAxis();
-    this.drawShape();
     this.drawLines();
+    this.drawShape();
+    this.addCenterCircle();
     this.addButtons();
   
   };
@@ -104,8 +106,7 @@ Radar_Chart.prototype.addAxis = function() {
   
   };
 
-
-Radar_Chart.prototype.drawShape = function(){
+Radar_Chart.prototype.addCenterCircle = function(){
 
     var that = this;
 
@@ -121,8 +122,15 @@ Radar_Chart.prototype.drawShape = function(){
         var r = 0
         return that.polarYScale(r);
     })
-    .attr("r",2)
-    .attr("fill","#000000");
+    .attr("r",1)
+    .attr("fill","#a7a7a7");
+
+};
+
+
+Radar_Chart.prototype.drawShape = function(){
+
+    var that = this;
 
     //find the vertices for the shape of the data
 
@@ -166,12 +174,12 @@ Radar_Chart.prototype.drawShape = function(){
         .transition()
         .duration(this.speed)
         .attr("x2",function(d){
-            var r = that.yScale(10);
+            var r = that.yScale(that.dataMaxValue);
             var theta = (that.dimensionRadianSpacing*that.xScale(d.key) + that.startingRadian) % (2*Math.PI);
             return that.polarXScale(r*Math.cos(theta));
         })
         .attr("y2",function(d){
-            var r = that.yScale(10);
+            var r = that.yScale(that.dataMaxValue);
             var theta = (that.dimensionRadianSpacing*that.xScale(d.key) + that.startingRadian) % (2*Math.PI);
             return that.polarYScale(r*Math.sin(theta));
         });
@@ -212,17 +220,17 @@ Radar_Chart.prototype.drawShape = function(){
         .attr("x1",this.polarXScale(0))
         .attr("y1",this.polarYScale(0))
         .attr("x2",function(d){
-            var r = that.yScale(10);
+            var r = that.yScale(that.dataMaxValue);
             var theta = (that.dimensionRadianSpacing*that.xScale(d.key) + that.startingRadian) % (2*Math.PI);
             return that.polarXScale(r*Math.cos(theta));
         })
         .attr("y2",function(d){
-            var r = that.yScale(10);
+            var r = that.yScale(that.dataMaxValue);
             var theta = (that.dimensionRadianSpacing*that.xScale(d.key) + that.startingRadian) % (2*Math.PI);
             return that.polarYScale(r*Math.sin(theta));
         })
-        .style("stroke-width",1)
-        .style("stroke","#DCDCDC")
+        .style("stroke-width",0.2)
+        .style("stroke","#D0D0D0")
         .style("stroke-dasharray", ("1, 1"));
         
 };
@@ -273,7 +281,7 @@ Radar_Chart.prototype.drawLines = function(){
     this.plot.append("path")
         .attr("class","radarPath")
         .attr("d",lineFunction(this.data))
-        .attr("fill","none")
+        .attr("fill",this.shapeFill)
         .attr("stroke","#a7a7a7")
         .attr("stroke-width",1);
 
@@ -282,7 +290,7 @@ Radar_Chart.prototype.drawLines = function(){
         .attr("d",outlineHalfFunction(this.data))
         .attr("fill","none")
         .attr("stroke","#DCDCDC")
-        .attr("stroke-width",1)
+        .attr("stroke-width",0.5)
         .style("stroke-dasharray", ("3, 3"));
 
         this.plot.append("path")
@@ -290,9 +298,8 @@ Radar_Chart.prototype.drawLines = function(){
         .attr("d",outlineFullFunction(this.data))
         .attr("fill","none")
         .attr("stroke","#DCDCDC")
-        .attr("stroke-width",1)
+        .attr("stroke-width",0.5)
         .style("stroke-dasharray", ("3, 3"));
-
 
 };
 
@@ -362,6 +369,13 @@ Radar_Chart.prototype.addButtons = function(){
         .on("click",function(){
             that.addData()
         });
+
+    d3.select(".button-container").append("button")
+    .text("Random Data")
+    .on("click",function(){
+        that.updateData()
+    });
+        
         
 };
 
@@ -375,10 +389,25 @@ Radar_Chart.prototype.addData = function(){
     
     this.data.push(newData);
     
-    console.log(this.data);
-
-    this.generatePolarScale();
-    this.drawShape();
-    this.updateLines();
+    this.redraw();
         
 };
+
+Radar_Chart.prototype.updateData = function(){
+
+    this.data.map(function(d){
+        d.value = Math.floor(Math.random() * 10) + 1;
+     });
+
+    this.redraw();
+        
+};
+
+Radar_Chart.prototype.redraw = function(){
+
+    this.generatePolarScale();
+    this.updateLines();
+    this.drawShape();
+
+
+}
